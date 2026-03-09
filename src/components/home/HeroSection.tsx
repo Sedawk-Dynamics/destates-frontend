@@ -28,7 +28,7 @@ export default function HeroSection() {
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
             >
               Invest in Premium{" "}
-              <span className="text-gradient">Affordable Housing</span>
+              <span className="text-gradient">Affordable Plots</span>
             </motion.h1>
 
             <motion.p
