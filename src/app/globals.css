@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fefbf8;
+  --foreground: #12080b;
+  --primary: #d4a84c;
+  --primary-foreground: #ffffff;
+  --secondary: #d48400;
+  --secondary-foreground: #ffffff;
+  --accent: #d4a84c;
+  --accent-foreground: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #12080b;
+  --muted: #f0eae4;
+  --muted-foreground: #6e5f63;
+  --border: #f1e6da;
+  --input: #fcfcfc;
+  --ring: #d4a84c;
+  --destructive: #e40014;
+  --destructive-foreground: #ffffff;
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--muted);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary);
+}
+
+/* Glass effect utility */
+.glass {
+  background: rgba(254, 251, 248, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(241, 230, 218, 0.5);
+}
+
+
+/* Gold gradient text */
+.text-gradient {
+  background: linear-gradient(135deg, #d4a84c 0%, #f0c878 50%, #d48400 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Image hover zoom */
+.img-zoom {
+  overflow: hidden;
+}
+
+.img-zoom img {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.img-zoom:hover img {
+  transform: scale(1.08);
+}
+
+/* Card hover glow effect */
+.card-glow {
+  transition: box-shadow 0.4s ease, transform 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 8px 30px rgba(212, 168, 76, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
