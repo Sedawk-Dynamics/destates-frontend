@@ -12,10 +12,7 @@ export const metadata: Metadata = {
   title: "Destates - Invest Without Sorrow | Premium Real Estate Investment",
   description: "Destates offers structured fractional ownership in premium real estate. Invest in RERA-registered properties, land plots, and PG accommodations with verified returns.",
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
+    icon: "/favicon.png",
     apple: "/logo.png",
   },
 };
