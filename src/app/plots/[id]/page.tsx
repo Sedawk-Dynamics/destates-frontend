@@ -11,7 +11,7 @@ import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, resolveImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function PlotDetailPage() {
@@ -48,7 +48,7 @@ export default function PlotDetailPage() {
         </Link>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="relative h-80 md:h-[400px] rounded-xl overflow-hidden">
-            <Image src={plot.images[0]} alt={plot.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+            <Image src={resolveImageUrl(plot.images[0])} alt={plot.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{plot.name}</h1>

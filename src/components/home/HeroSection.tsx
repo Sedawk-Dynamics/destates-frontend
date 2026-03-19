@@ -27,8 +27,8 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
             >
-              Invest in Premium{" "}
-              <span className="text-gradient">Affordable Plots</span>
+              Affordable Housing &{" "}
+              <span className="text-gradient">Premium Investments</span>
             </motion.h1>
 
             <motion.p
@@ -37,9 +37,9 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-lg text-muted-foreground mb-8 max-w-xl"
             >
-              Discover verified real estate investment opportunities with fractional ownership.
-              Start building your wealth with as little as ₹5,000 through our secure, transparent
-              platform backed by legal documentation and professional support.
+              Your marketplace for ultra-luxury shops, office spaces, studio apartments, and affordable
+              housing. Enjoy hassle-free rental income secured by long-term dry leases of 9 to 15 years
+              with top brands including M3M. Invest with confidence on a transparent, RERA-backed platform.
             </motion.p>
 
             <motion.div

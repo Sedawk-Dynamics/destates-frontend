@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, MapPin, Phone, BedDouble, CheckCircle, Wifi, Wind, Droplets, Zap } from "lucide-react";
 import { PGListing } from "@/types";
 import { getPGById } from "@/lib/api";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, resolveImageUrl } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 
 export default function PGDetailPage() {
@@ -30,7 +30,7 @@ export default function PGDetailPage() {
           <div className="space-y-3">
             {pg.images.map((img, i) => (
               <div key={i} className="relative h-64 rounded-xl overflow-hidden">
-                <Image src={img} alt={pg.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+                <Image src={resolveImageUrl(img)} alt={pg.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
               </div>
             ))}
           </div>

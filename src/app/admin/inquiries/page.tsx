@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { ContactInquiry } from "@/types";
 import { getAdminInquiries } from "@/lib/api";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -35,8 +35,8 @@ export default function AdminInquiries() {
               </thead>
               <tbody className="divide-y divide-border">
                 {inquiries.map((inq) => (
-                  <>
-                    <tr key={inq.id} className="hover:bg-muted/50">
+                  <Fragment key={inq.id}>
+                    <tr className="hover:bg-muted/50">
                       <td className="px-4 py-3 font-medium text-foreground">{inq.name}</td>
                       <td className="px-4 py-3 text-muted-foreground">{inq.email}</td>
                       <td className="px-4 py-3 text-muted-foreground">{inq.subject}</td>
@@ -51,7 +51,7 @@ export default function AdminInquiries() {
                       </td>
                     </tr>
                     {expandedId === inq.id && (
-                      <tr key={`${inq.id}-detail`}>
+                      <tr>
                         <td colSpan={5} className="px-4 py-4 bg-muted/30">
                           <div className="space-y-1">
                             {inq.phone && <p className="text-sm"><span className="font-medium text-foreground">Phone:</span> <span className="text-muted-foreground">{inq.phone}</span></p>}
@@ -61,7 +61,7 @@ export default function AdminInquiries() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
                 {inquiries.length === 0 && (
                   <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No inquiries found</td></tr>

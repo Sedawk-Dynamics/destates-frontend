@@ -1,7 +1,7 @@
 "use client";
 
 import { LandPlot } from "@/types";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, resolveImageUrl } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,13 +18,17 @@ export default function PlotCard({ plot }: { plot: LandPlot }) {
       <Link href={`/plots/${plot.id}`} className="block">
         <div className="bg-card rounded-xl overflow-hidden border border-border shadow-sm">
           <div className="relative h-48 img-zoom">
-            <Image
-              src={plot.images[0]}
-              alt={plot.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
+            {plot.images?.[0] ? (
+              <Image
+                src={resolveImageUrl(plot.images[0])}
+                alt={plot.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">No Image</div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
           </div>
           <div className="p-5">

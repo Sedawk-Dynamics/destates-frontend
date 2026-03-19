@@ -24,3 +24,12 @@ export function formatNumber(num: number): string {
 export function formatPrice(amount: number): string {
   return `₹${amount.toLocaleString("en-IN")}`;
 }
+
+export function resolveImageUrl(url: string): string {
+  if (!url) return "";
+  // Full backend URLs → convert to relative path so Next.js proxy handles them
+  const backendHost = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
+  if (url.startsWith(backendHost)) return url.replace(backendHost, "");
+  // Already a relative /uploads/ path or external URL — use as-is
+  return url;
+}

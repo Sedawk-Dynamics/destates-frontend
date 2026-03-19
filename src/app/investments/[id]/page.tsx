@@ -5,14 +5,14 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, TrendingUp, Maximize, Building, Shield, CheckCircle, ShoppingCart } from "lucide-react";
+import { ArrowLeft, MapPin, TrendingUp, Maximize, Building, Shield, CheckCircle, ShoppingCart, ShieldCheck } from "lucide-react";
 import { Property } from "@/types";
 import { getPropertyById } from "@/lib/api";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, resolveImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function PropertyDetailPage() {
@@ -20,6 +20,8 @@ export default function PropertyDetailPage() {
   const [property, setProperty] = useState<Property | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [investAmount, setInvestAmount] = useState(500000);
+  const [insuranceSelected, setInsuranceSelected] = useState(false);
+  const [insurancePlan, setInsurancePlan] = useState<number>(2000);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
 
@@ -58,7 +60,7 @@ export default function PropertyDetailPage() {
           {/* Image Gallery */}
           <div>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative h-80 md:h-[400px] rounded-xl overflow-hidden mb-3">
-              <Image src={property.images[selectedImage]} alt={property.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+              <Image src={resolveImageUrl(property.images[selectedImage])} alt={property.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
               <div className="absolute top-3 left-3 flex gap-2">
                 <Badge variant={property.status === "AVAILABLE" ? "success" : "warning"}>
                   {property.status === "AVAILABLE" ? "Available" : "Limited"}
@@ -69,7 +71,7 @@ export default function PropertyDetailPage() {
             <div className="flex gap-2">
               {property.images.map((img, i) => (
                 <button key={i} onClick={() => setSelectedImage(i)} className={`relative w-20 h-16 rounded-lg overflow-hidden border-2 ${i === selectedImage ? "border-primary" : "border-transparent"}`}>
-                  <Image src={img} alt="" fill className="object-cover" sizes="80px" />
+                  <Image src={resolveImageUrl(img)} alt="" fill className="object-cover" sizes="80px" />
                 </button>
               ))}
             </div>
@@ -132,6 +134,50 @@ export default function PropertyDetailPage() {
                   <p className="text-lg font-bold text-foreground">{formatCurrency(investAmount * Math.pow(1 + property.expectedROI / 100, 5))}</p>
                 </div>
               </div>
+            </div>
+
+            {/* Optional Insurance */}
+            <div className="bg-muted/50 rounded-xl p-6 mb-6 border border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-primary" /> Optional Insurance
+                </h3>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={insuranceSelected}
+                    onChange={(e) => setInsuranceSelected(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+                </label>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Secure your investment against damage, natural calamities, or other unforeseen issues with our optional insurance coverage.
+              </p>
+              {insuranceSelected && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Select monthly premium:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[2000, 3500, 5000].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setInsurancePlan(amount)}
+                        className={`py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
+                          insurancePlan === amount
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-card text-muted-foreground hover:border-primary/50"
+                        }`}
+                      >
+                        ₹{amount.toLocaleString("en-IN")}/mo
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Coverage: structural damage, fire, flooding & more. <a href="/terms#insurance" className="text-primary hover:underline">View full details</a>
+                  </p>
+                </div>
+              )}
             </div>
 
             <Button onClick={handleAddToCart} size="lg" className="w-full">

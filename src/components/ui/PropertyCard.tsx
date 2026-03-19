@@ -1,7 +1,7 @@
 "use client";
 
 import { Property } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, resolveImageUrl } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,13 +18,17 @@ export default function PropertyCard({ property }: { property: Property }) {
       <Link href={`/investments/${property.id}`} className="block">
         <div className="bg-card rounded-xl overflow-hidden border border-border shadow-sm">
           <div className="relative h-52 img-zoom">
-            <Image
-              src={property.images[0]}
-              alt={property.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
+            {property.images?.[0] ? (
+              <Image
+                src={resolveImageUrl(property.images[0])}
+                alt={property.name}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-sm">No Image</div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             <div className="absolute top-3 left-3">
               <Badge variant={property.status === "AVAILABLE" ? "success" : "warning"}>

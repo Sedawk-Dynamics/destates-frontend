@@ -13,7 +13,6 @@ import { useAuth } from "@/lib/auth-context";
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/properties", label: "Properties", icon: Building },
-  { href: "/admin/plots", label: "Land Plots", icon: MapPin },
   { href: "/admin/pgs", label: "PG Listings", icon: HomeIcon },
   { href: "/admin/testimonials", label: "Testimonials", icon: Star },
   { href: "/admin/users", label: "Users", icon: Users },

@@ -5,10 +5,10 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import { ShieldCheck, LineChart, Lock, Wallet } from "lucide-react";
 
 const benefits = [
-  { icon: ShieldCheck, title: "Verified Returns", description: "Transparent rental yields and capital appreciation backed by legal documentation" },
-  { icon: LineChart, title: "Professional Management", description: "Expert team handles all property management and tenant relations" },
-  { icon: Lock, title: "100% Secure", description: "Legal ownership certificates and complete transparency in all transactions" },
-  { icon: Wallet, title: "Dual Income Streams", description: "Earn through monthly rental yields and long-term capital appreciation" },
+  { icon: ShieldCheck, title: "Long-Term Lease Security", description: "Properties secured with 9-year and 15-year dry lease contracts with top brands, ensuring guaranteed rental income" },
+  { icon: LineChart, title: "Brand Collaborations", description: "Partnered with leading companies like M3M to offer premium commercial spaces — shops, offices, and studio apartments" },
+  { icon: Lock, title: "Hassle-Free Income", description: "We handle property management, agreements, and transfers end-to-end so you earn without the hassle" },
+  { icon: Wallet, title: "Dual Income Streams", description: "Earn through consistent monthly rental yields and long-term capital appreciation on your investment" },
 ];
 
 export default function BenefitsSection() {

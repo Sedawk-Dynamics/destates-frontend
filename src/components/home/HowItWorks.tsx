@@ -2,15 +2,15 @@
 
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import SectionHeading from "@/components/ui/SectionHeading";
-import { Home, ShoppingCart, ShieldCheck, TrendingUp, FileCheck, Users } from "lucide-react";
+import { Home, ShoppingCart, ShieldCheck, TrendingUp, FileCheck, Users, ArrowLeftRight } from "lucide-react";
 
 const steps = [
-  { icon: Home, title: "Browse Properties", description: "Explore our curated selection of RERA-registered investment properties" },
-  { icon: ShoppingCart, title: "Add to Cart", description: "Select your preferred properties and add them to your investment cart" },
-  { icon: ShieldCheck, title: "RERA Registered", description: "All properties are government-registered with full legal compliance and transparency" },
-  { icon: FileCheck, title: "Verified Properties", description: "Thoroughly vetted properties with complete documentation and market validation" },
-  { icon: TrendingUp, title: "Guaranteed Returns", description: "Consistent rental yields and capital appreciation backed by market data" },
-  { icon: Users, title: "Dedicated Support", description: "Expert team available to guide you through every step of your investment journey" },
+  { icon: Home, title: "Browse Marketplace", description: "Explore affordable housing, ultra-luxury shops, offices, and studio apartments from top developers like M3M" },
+  { icon: ShoppingCart, title: "Select & Invest", description: "Choose your preferred property and add it to your cart — we handle all agreements and documentation" },
+  { icon: ShieldCheck, title: "Secured by Leases", description: "Properties come with long-term dry leases of 9 to 15 years with leading brands, ensuring guaranteed rental income" },
+  { icon: ArrowLeftRight, title: "Easy Property Transfer", description: "We manage the complete transfer process — agreements, company approvals, and documentation between buyer and seller" },
+  { icon: TrendingUp, title: "Hassle-Free Income", description: "Sit back and earn consistent rental income while our team manages everything end-to-end" },
+  { icon: Users, title: "Dedicated Support", description: "Expert team available to guide you through every step — from investment to property transfer and beyond" },
 ];
 
 export default function HowItWorks() {
