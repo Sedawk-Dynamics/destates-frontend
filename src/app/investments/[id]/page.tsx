@@ -19,14 +19,17 @@ export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [investAmount, setInvestAmount] = useState(500000);
+  const [investAmount, setInvestAmount] = useState(0);
   const [insuranceSelected, setInsuranceSelected] = useState(false);
   const [insurancePlan, setInsurancePlan] = useState<number>(2000);
   const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    getPropertyById(id).then((res) => setProperty(res.data)).catch(() => {});
+    getPropertyById(id).then((res) => {
+      setProperty(res.data);
+      setInvestAmount(res.data.minInvestment || 100000);
+    }).catch(() => {});
   }, [id]);
 
   if (!property) {
@@ -116,25 +119,39 @@ export default function PropertyDetailPage() {
             </div>
 
             {/* ROI Calculator */}
-            <div className="bg-muted/50 rounded-xl p-6 mb-6">
-              <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><TrendingUp size={18} className="text-primary" /> ROI Calculator</h3>
-              <label className="text-sm text-muted-foreground">Investment Amount: {formatCurrency(investAmount)}</label>
-              <input type="range" min={100000} max={property.price} step={100000} value={investAmount} onChange={(e) => setInvestAmount(Number(e.target.value))} className="w-full mt-2 mb-4 accent-primary" />
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Annual Return</p>
-                  <p className="text-lg font-bold text-green-600">{formatCurrency(annualReturn)}</p>
+            {property.roiCalculatorEnabled && (
+              <div className="bg-muted/50 rounded-xl p-6 mb-6">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><TrendingUp size={18} className="text-primary" /> ROI Calculator</h3>
+                <label className="text-sm text-muted-foreground">Investment Amount: {formatCurrency(investAmount)}</label>
+                <input
+                  type="range"
+                  min={property.minInvestment}
+                  max={property.maxInvestment || property.price}
+                  step={property.investmentStep}
+                  value={investAmount}
+                  onChange={(e) => setInvestAmount(Number(e.target.value))}
+                  className="w-full mt-2 mb-1 accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mb-4">
+                  <span>{formatCurrency(property.minInvestment)}</span>
+                  <span>{formatCurrency(property.maxInvestment || property.price)}</span>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Monthly Yield</p>
-                  <p className="text-lg font-bold text-primary">{formatCurrency(monthlyReturn)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">5-Year Value</p>
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(investAmount * Math.pow(1 + property.expectedROI / 100, 5))}</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Annual Return</p>
+                    <p className="text-lg font-bold text-green-600">{formatCurrency(annualReturn)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Monthly Yield</p>
+                    <p className="text-lg font-bold text-primary">{formatCurrency(monthlyReturn)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">{property.projectionYears}-Year Value</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(investAmount * Math.pow(1 + property.expectedROI / 100, property.projectionYears))}</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Optional Insurance */}
             <div className="bg-muted/50 rounded-xl p-6 mb-6 border border-border">

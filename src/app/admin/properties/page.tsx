@@ -11,6 +11,7 @@ const emptyForm = {
   name: "", location: "", city: "", price: 0, expectedROI: 0, monthlyYield: 0,
   area: 0, units: 0, availableUnits: 0, status: "AVAILABLE" as Property["status"],
   description: "", highlights: "", images: [] as string[], reraRegistered: true, readyToMove: false, type: "Residential",
+  roiCalculatorEnabled: true, minInvestment: 100000, maxInvestment: 0, investmentStep: 100000, projectionYears: 5,
 };
 
 export default function AdminProperties() {
@@ -38,6 +39,9 @@ export default function AdminProperties() {
       description: p.description, highlights: p.highlights.join(", "),
       images: [...p.images], reraRegistered: p.reraRegistered,
       readyToMove: p.readyToMove, type: p.type,
+      roiCalculatorEnabled: p.roiCalculatorEnabled ?? true, minInvestment: p.minInvestment ?? 100000,
+      maxInvestment: p.maxInvestment || 0, investmentStep: p.investmentStep ?? 100000,
+      projectionYears: p.projectionYears ?? 5,
     });
     setEditId(p.id);
     setShowForm(true);
@@ -54,6 +58,8 @@ export default function AdminProperties() {
         units: Number(form.units), availableUnits: Number(form.availableUnits),
         highlights: form.highlights.split(",").map((s) => s.trim()).filter(Boolean),
         images: form.images,
+        minInvestment: Number(form.minInvestment), maxInvestment: Number(form.maxInvestment) || null,
+        investmentStep: Number(form.investmentStep), projectionYears: Number(form.projectionYears),
       };
       if (editId) {
         await adminUpdateProperty(editId, data);
@@ -215,6 +221,37 @@ export default function AdminProperties() {
                 <label className="block text-sm font-medium text-foreground mb-1">Highlights (comma-separated)</label>
                 <input className={inputClass} value={form.highlights} onChange={(e) => setForm({ ...form, highlights: e.target.value })} placeholder="RERA Registered, Swimming Pool, ..." />
               </div>
+              {/* ROI Calculator Settings */}
+              <div className="border border-border rounded-[var(--radius)] p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">ROI Calculator Settings</h3>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={form.roiCalculatorEnabled} onChange={(e) => setForm({ ...form, roiCalculatorEnabled: e.target.checked })} className="accent-primary" />
+                    Enable Calculator
+                  </label>
+                </div>
+                {form.roiCalculatorEnabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Min Investment (INR)</label>
+                      <input type="number" className={inputClass} value={form.minInvestment} onChange={(e) => setForm({ ...form, minInvestment: Number(e.target.value) })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Max Investment (INR, 0 = property price)</label>
+                      <input type="number" className={inputClass} value={form.maxInvestment} onChange={(e) => setForm({ ...form, maxInvestment: Number(e.target.value) })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Investment Step (INR)</label>
+                      <input type="number" className={inputClass} value={form.investmentStep} onChange={(e) => setForm({ ...form, investmentStep: Number(e.target.value) })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-1">Projection Years</label>
+                      <input type="number" min={1} max={30} className={inputClass} value={form.projectionYears} onChange={(e) => setForm({ ...form, projectionYears: Number(e.target.value) })} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <ImageUploader images={form.images} onChange={(imgs) => setForm({ ...form, images: imgs })} />
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm border border-border rounded-[var(--radius)] hover:bg-muted">Cancel</button>

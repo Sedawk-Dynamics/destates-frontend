@@ -1,11 +1,38 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Button from "@/components/ui/Button";
 import { ArrowRight, Shield, TrendingUp, CheckCircle } from "lucide-react";
 
+const heroImages = [
+  {
+    src: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&q=80",
+    alt: "Modern Office Building",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=800&q=80",
+    alt: "Shopping Mall Interior",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
+    alt: "Premium Commercial Complex",
+  },
+];
+
 export default function HeroSection() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const nextSlide = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % heroImages.length);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(nextSlide, 4000);
+    return () => clearInterval(interval);
+  }, [nextSlide]);
+
   return (
     <section className="relative min-h-[90vh] flex items-center bg-background overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
@@ -27,7 +54,7 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
             >
-              Affordable Housing &{" "}
+              Affordable Commercial &{" "}
               <span className="text-gradient">Premium Investments</span>
             </motion.h1>
 
@@ -74,7 +101,7 @@ export default function HeroSection() {
             </motion.div>
           </div>
 
-          {/* Right Image */}
+          {/* Right Image Slider */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -82,16 +109,43 @@ export default function HeroSection() {
             className="hidden lg:block"
           >
             <div className="relative">
-              <div className="rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80"
-                  alt="Premium Real Estate Investment"
-                  width={600}
-                  height={450}
-                  className="w-full h-auto object-cover"
-                  priority
-                />
+              <div className="rounded-2xl overflow-hidden shadow-2xl relative h-[450px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentIndex}
+                    initial={{ opacity: 0, x: 60 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -60 }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={heroImages[currentIndex].src}
+                      alt={heroImages[currentIndex].alt}
+                      width={600}
+                      height={450}
+                      className="w-full h-full object-cover"
+                      priority
+                    />
+                  </motion.div>
+                </AnimatePresence>
               </div>
+
+              {/* Slide indicators */}
+              <div className="flex justify-center gap-2 mt-4">
+                {heroImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                      index === currentIndex
+                        ? "bg-primary w-7"
+                        : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
+              </div>
+
               {/* Floating stat card */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}

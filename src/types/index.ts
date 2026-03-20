@@ -16,6 +16,11 @@ export interface Property {
   reraRegistered: boolean;
   readyToMove: boolean;
   type: string;
+  roiCalculatorEnabled: boolean;
+  minInvestment: number;
+  maxInvestment: number | null;
+  investmentStep: number;
+  projectionYears: number;
 }
 
 export interface LandPlot {
