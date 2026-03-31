@@ -10,7 +10,7 @@ import CTASection from "@/components/home/CTASection";
 import { Property, Testimonial } from "@/types";
 
 async function getData() {
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const API = process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api";
   try {
     const [propsRes, testimonialsRes] = await Promise.all([
       fetch(`${API}/properties`, { cache: "no-store" }),

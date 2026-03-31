@@ -28,7 +28,7 @@ export function formatPrice(amount: number): string {
 export function resolveImageUrl(url: string): string {
   if (!url) return "";
   // Full backend URLs → convert to relative path so Next.js proxy handles them
-  const backendHost = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api$/, "");
+  const backendHost = (process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api").replace(/\/api$/, "");
   if (url.startsWith(backendHost)) return url.replace(backendHost, "");
   // Already a relative /uploads/ path or external URL — use as-is
   return url;

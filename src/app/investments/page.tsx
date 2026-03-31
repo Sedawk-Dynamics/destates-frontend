@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 async function getProperties() {
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const API = process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api";
   try {
     const res = await fetch(`${API}/properties`, { cache: "no-store" });
     if (!res.ok) return [];

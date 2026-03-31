@@ -11,9 +11,27 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export const metadata: Metadata = {
   title: "Destates - Invest Without Sorrow | Premium Real Estate Investment",
   description: "Destates offers structured fractional ownership in premium real estate. Invest in RERA-registered properties, land plots, and PG accommodations with verified returns.",
+  metadataBase: new URL("https://destates.in"),
   icons: {
     icon: "/favicon.png",
     apple: "/logo.png",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Destates",
+    title: "Destates - Invest Without Sorrow | Premium Real Estate Investment",
+    description: "Invest in RERA-registered properties, land plots, and PG accommodations with verified returns.",
+    url: "https://destates.in",
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "Destates" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Destates - Premium Real Estate Investment",
+    description: "Invest in RERA-registered properties, land plots, and PG accommodations with verified returns.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

@@ -1,6 +1,6 @@
 import { ApiResponse, Property, LandPlot, PGListing, CartItem, User, Testimonial, ContactInquiry, DashboardStats } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;

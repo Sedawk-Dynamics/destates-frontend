@@ -5,7 +5,7 @@ import { Upload, X, ImageIcon } from "lucide-react";
 import { uploadImages } from "@/lib/api";
 import toast from "react-hot-toast";
 
-const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000";
+const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "https://api.destates.in";
 
 function getFullUrl(url: string) {
   if (url.startsWith("http")) return url;
