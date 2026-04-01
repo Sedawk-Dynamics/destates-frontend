@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "https://api.destates.in";
+const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "https://api.destates.in";
 
 const nextConfig: NextConfig = {
   images: {
@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
         protocol: "http",
         hostname: "localhost",
       },
+    ],
+    localPatterns: [
+      { pathname: "/**" },
     ],
   },
   async headers() {

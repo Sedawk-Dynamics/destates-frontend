@@ -5,10 +5,14 @@ import { Upload, X, ImageIcon } from "lucide-react";
 import { uploadImages } from "@/lib/api";
 import toast from "react-hot-toast";
 
-const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "https://api.destates.in";
+const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "https://api.destates.in";
 
 function getFullUrl(url: string) {
+  if (!url) return "";
+  // Already absolute
   if (url.startsWith("http")) return url;
+  // Relative /uploads/ path — prefix with backend host for admin preview
+  if (url.startsWith("/uploads/")) return `${API_HOST}${url}`;
   return `${API_HOST}${url}`;
 }
 

@@ -26,10 +26,15 @@ export function formatPrice(amount: number): string {
 }
 
 export function resolveImageUrl(url: string): string {
-  if (!url) return "";
-  // Full backend URLs → convert to relative path so Next.js proxy handles them
-  const backendHost = (process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api").replace(/\/api$/, "");
-  if (url.startsWith(backendHost)) return url.replace(backendHost, "");
-  // Already a relative /uploads/ path or external URL — use as-is
+  if (!url) return "/placeholder.svg";
+  // Already a relative path — served via Next.js rewrite to backend
+  if (url.startsWith("/uploads/")) return url;
+  // Strip any backend host prefix (handles legacy absolute URLs from any environment)
+  try {
+    const parsed = new URL(url);
+    if (parsed.pathname.startsWith("/uploads/")) return parsed.pathname;
+  } catch {
+    // Not a valid URL, return as-is
+  }
   return url;
 }
