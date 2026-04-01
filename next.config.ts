@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const API_HOST = process.env.NEXT_PUBLIC_API_URL?.replace(/\/api$/, "") || "https://api.destates.in";
 
 const nextConfig: NextConfig = {
+  // Use "standalone" only for Docker deployments. Nixpacks/Dokploy uses `next start` directly.
+  // output: "standalone",
   images: {
     remotePatterns: [
       {
