@@ -63,8 +63,8 @@ export const changePasswordApi = (data: { currentPassword: string; newPassword: 
   apiClient<ApiResponse<null>>("/auth/change-password", { method: "PUT", body: JSON.stringify(data) });
 
 // Investments
-export const createInvestmentOrder = (data: { propertyId: string; fractions: number }) =>
-  apiClient<ApiResponse<CreateOrderResponse>>("/investments/create-order", {
+export const createInvestmentOrder = (data: { propertyId: string; fractions: number; insurancePlanId?: string }) =>
+  apiClient<ApiResponse<CreateOrderResponse & { insurancePremium?: number }>>("/investments/create-order", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -73,6 +73,7 @@ export const verifyInvestmentPayment = (data: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
+  insurancePlanId?: string;
 }) =>
   apiClient<ApiResponse<Investment>>("/investments/verify-payment", {
     method: "POST",

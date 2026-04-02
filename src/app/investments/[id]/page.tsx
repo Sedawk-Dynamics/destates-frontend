@@ -26,6 +26,7 @@ export default function PropertyDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [fractions, setFractions] = useState(0);
   const [plans, setPlans] = useState<InsurancePlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
@@ -37,7 +38,6 @@ export default function PropertyDetailPage() {
     getInsurancePlans(id).then((res) => setPlans(res.data)).catch(() => {});
   }, [id]);
 
-  // Load Razorpay script
   useEffect(() => {
     if (document.getElementById("razorpay-script")) return;
     const script = document.createElement("script");
@@ -47,32 +47,32 @@ export default function PropertyDetailPage() {
     document.body.appendChild(script);
   }, []);
 
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId) || null;
+
   const handleInvest = useCallback(async () => {
     if (!isAuthenticated) {
       toast.error("Please login to invest");
       return;
     }
     if (!property) return;
-    if (fractions < 1 || fractions > property.availableFractions) {
-      toast.error(`Select between 1 and ${property.availableFractions} fractions`);
-      return;
-    }
 
     setPaying(true);
     try {
       const res = await createInvestmentOrder({
         propertyId: property.id,
         fractions,
+        insurancePlanId: selectedPlanId || undefined,
       });
 
       const { orderId, amount, currency, key } = res.data;
+      const planId = selectedPlanId;
 
       const options = {
         key,
         amount,
         currency,
         name: "Destates",
-        description: `${fractions} fraction(s) of ${property.name}`,
+        description: `${fractions} fraction(s) of ${property.name}${selectedPlan ? ` + ${selectedPlan.name} Insurance` : ""}`,
         order_id: orderId,
         handler: async (response: any) => {
           try {
@@ -80,11 +80,16 @@ export default function PropertyDetailPage() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
+              insurancePlanId: planId || undefined,
             });
-            toast.success("Investment successful! Check My Investments for details.");
+            toast.success(planId
+              ? "Investment + Insurance activated! Check My Investments."
+              : "Investment successful! Check My Investments."
+            );
             const updated = await getPropertyById(id);
             setProperty(updated.data);
-            setFractions(1);
+            setFractions(updated.data.minFractions || 1);
+            setSelectedPlanId(null);
           } catch {
             toast.error("Payment verification failed. Contact support if money was deducted.");
           }
@@ -109,7 +114,7 @@ export default function PropertyDetailPage() {
     } finally {
       setPaying(false);
     }
-  }, [isAuthenticated, property, fractions, id, user]);
+  }, [isAuthenticated, property, fractions, id, user, selectedPlanId, selectedPlan]);
 
   if (!property) {
     return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Loading...</div>;
@@ -117,21 +122,22 @@ export default function PropertyDetailPage() {
 
   const minF = property.minFractions || 1;
   const maxF = property.maxFractions || property.availableFractions;
-  const totalCost = fractions * property.pricePerFraction;
-  const annualReturn = (totalCost * property.expectedROI) / 100;
-  const monthlyReturn = property.monthlyYield ? (totalCost * property.monthlyYield) / 100 : 0;
+  const investmentCost = fractions * property.pricePerFraction;
+  const insuranceCost = selectedPlan?.monthlyPremium || 0;
+  const totalCost = investmentCost + insuranceCost;
+  const annualReturn = (investmentCost * property.expectedROI) / 100;
+  const monthlyReturn = property.monthlyYield ? (investmentCost * property.monthlyYield) / 100 : 0;
   const annualRentalIncome = monthlyReturn * (property.rentalYieldMonths || 12);
-  const capitalGain = (totalCost * (property.capitalAppreciation || 0)) / 100;
+  const capitalGain = (investmentCost * (property.capitalAppreciation || 0)) / 100;
 
-  // Projection calculation
   const projYears = property.projectionYears || 5;
-  let projectedValue = totalCost;
+  let projectedValue = investmentCost;
   let totalRentalIncome = 0;
   for (let y = 0; y < projYears; y++) {
     projectedValue *= (1 + (property.capitalAppreciation || 0) / 100);
     totalRentalIncome += monthlyReturn * (property.rentalYieldMonths || 12);
   }
-  const totalProjectedReturn = projectedValue - totalCost + totalRentalIncome;
+  const totalProjectedReturn = projectedValue - investmentCost + totalRentalIncome;
 
   return (
     <div className="py-12">
@@ -171,7 +177,7 @@ export default function PropertyDetailPage() {
                 <Shield size={20} className="text-red-500 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-red-700">This property has been disabled</p>
-                  <p className="text-xs text-red-600">New investments are currently paused by the admin. Your existing holdings remain safe.</p>
+                  <p className="text-xs text-red-600">New investments are currently paused. Your existing holdings remain safe.</p>
                 </div>
               </div>
             )}
@@ -224,42 +230,13 @@ export default function PropertyDetailPage() {
                     Number of Fractions (min {minF}{maxF < property.availableFractions ? `, max ${maxF}` : ""}, {property.availableFractions} available)
                   </label>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setFractions(Math.max(minF, fractions - 1))}
-                      className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
-                      disabled={fractions <= minF}
-                    >-</button>
+                    <button onClick={() => setFractions(Math.max(minF, fractions - 1))} className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors" disabled={fractions <= minF}>-</button>
                     <input
-                      type="number"
-                      min={minF}
-                      max={Math.min(maxF, property.availableFractions)}
-                      value={fractions}
-                      onChange={(e) => {
-                        const val = Math.max(minF, Math.min(Math.min(maxF, property.availableFractions), Number(e.target.value) || minF));
-                        setFractions(val);
-                      }}
+                      type="number" min={minF} max={Math.min(maxF, property.availableFractions)} value={fractions}
+                      onChange={(e) => setFractions(Math.max(minF, Math.min(Math.min(maxF, property.availableFractions), Number(e.target.value) || minF)))}
                       className="w-24 text-center px-3 py-2 bg-card border border-border rounded-lg text-foreground font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
-                    <button
-                      onClick={() => setFractions(Math.min(Math.min(maxF, property.availableFractions), fractions + 1))}
-                      className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
-                      disabled={fractions >= Math.min(maxF, property.availableFractions)}
-                    >+</button>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-lg p-4 border border-border">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Price per fraction</span>
-                    <span className="text-foreground font-medium">{formatPrice(property.pricePerFraction)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Fractions</span>
-                    <span className="text-foreground font-medium">x {fractions}</span>
-                  </div>
-                  <div className="border-t border-border pt-2 flex justify-between">
-                    <span className="font-semibold text-foreground">Total Investment</span>
-                    <span className="font-bold text-primary text-lg">{formatPrice(totalCost)}</span>
+                    <button onClick={() => setFractions(Math.min(Math.min(maxF, property.availableFractions), fractions + 1))} className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors" disabled={fractions >= Math.min(maxF, property.availableFractions)}>+</button>
                   </div>
                 </div>
 
@@ -287,36 +264,16 @@ export default function PropertyDetailPage() {
                         <p className="text-[10px] text-muted-foreground">{property.rentalYieldMonths || 12} months</p>
                       </div>
                     </div>
-
-                    {/* Projection */}
                     <div className="bg-card rounded-lg p-4 border border-border">
                       <p className="text-xs text-muted-foreground mb-2 font-medium">{projYears}-Year Projection</p>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Investment</span>
-                        <span className="text-foreground">{formatPrice(totalCost)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Property Value ({projYears}yr)</span>
-                        <span className="text-orange-600">{formatPrice(projectedValue)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-muted-foreground">Total Rental Income</span>
-                        <span className="text-blue-600">{formatPrice(totalRentalIncome)}</span>
-                      </div>
-                      <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
-                        <span className="text-foreground">Total Return</span>
-                        <span className="text-green-600">{formatPrice(totalProjectedReturn)}</span>
-                      </div>
+                      <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">Investment</span><span>{formatPrice(investmentCost)}</span></div>
+                      <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">Property Value ({projYears}yr)</span><span className="text-orange-600">{formatPrice(projectedValue)}</span></div>
+                      <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">Total Rental Income</span><span className="text-blue-600">{formatPrice(totalRentalIncome)}</span></div>
+                      <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold"><span>Total Return</span><span className="text-green-600">{formatPrice(totalProjectedReturn)}</span></div>
                     </div>
-
-                    {/* Info badges */}
                     <div className="flex flex-wrap gap-2">
-                      {property.lockInPeriod > 0 && (
-                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Lock-in: {property.lockInPeriod} months</span>
-                      )}
-                      {property.lockInPeriod === 0 && (
-                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">No lock-in period</span>
-                      )}
+                      {property.lockInPeriod > 0 && <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Lock-in: {property.lockInPeriod} months</span>}
+                      {property.lockInPeriod === 0 && <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">No lock-in period</span>}
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Rental: {property.rentalYieldMonths || 12} months/year</span>
                     </div>
                   </div>
@@ -324,26 +281,80 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* Insurance Plans */}
+            {/* Insurance Plan Selection */}
             {plans.length > 0 && (
               <div className="bg-muted/50 rounded-xl p-6 mb-6 border border-border">
                 <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
                   <ShieldCheck size={18} className="text-primary" /> Optional Insurance
                 </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Protect your investment with insurance. You can purchase insurance from My Investments after investing.
+                  Select a plan to include with your investment, or skip to invest without insurance.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {plans.map((plan) => (
-                    <div key={plan.id} className="bg-card rounded-lg p-4 border border-border">
-                      <p className="font-semibold text-foreground text-sm">{plan.name}</p>
-                      <p className="text-xl font-bold text-primary mt-1">{formatPrice(plan.monthlyPremium)}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
-                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{plan.coverage}</p>
+                <div className="space-y-2">
+                  {/* No insurance option */}
+                  <button
+                    onClick={() => setSelectedPlanId(null)}
+                    className={`w-full text-left rounded-lg p-4 border transition-colors ${
+                      selectedPlanId === null
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlanId === null ? "border-primary" : "border-muted-foreground/30"}`}>
+                          {selectedPlanId === null && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                        </div>
+                        <span className="font-medium text-foreground text-sm">No Insurance</span>
+                      </div>
+                      <span className="text-sm text-muted-foreground">₹0</span>
                     </div>
+                  </button>
+
+                  {/* Insurance plan options */}
+                  {plans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelectedPlanId(plan.id)}
+                      className={`w-full text-left rounded-lg p-4 border transition-colors ${
+                        selectedPlanId === plan.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-card hover:border-primary/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlanId === plan.id ? "border-primary" : "border-muted-foreground/30"}`}>
+                            {selectedPlanId === plan.id && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                          </div>
+                          <span className="font-medium text-foreground text-sm">{plan.name}</span>
+                        </div>
+                        <span className="font-bold text-primary text-sm">{formatPrice(plan.monthlyPremium)}<span className="text-xs font-normal text-muted-foreground">/mo</span></span>
+                      </div>
+                      <p className="text-xs text-muted-foreground ml-8 leading-relaxed">{plan.coverage}</p>
+                    </button>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Price Summary + Invest Button */}
+            <div className="bg-card rounded-xl p-5 border border-border mb-4">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Investment ({fractions} fractions)</span>
+                <span className="text-foreground font-medium">{formatPrice(investmentCost)}</span>
+              </div>
+              {selectedPlan && (
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">Insurance ({selectedPlan.name})</span>
+                  <span className="text-foreground font-medium">{formatPrice(insuranceCost)}</span>
+                </div>
+              )}
+              <div className="border-t border-border pt-2 mt-1 flex justify-between">
+                <span className="font-semibold text-foreground">Total</span>
+                <span className="font-bold text-primary text-lg">{formatPrice(totalCost)}</span>
+              </div>
+            </div>
 
             <Button
               onClick={handleInvest}
@@ -352,7 +363,7 @@ export default function PropertyDetailPage() {
               disabled={paying || property.disabled || property.status === "SOLD_OUT" || property.availableFractions === 0}
             >
               <CreditCard size={18} className="mr-2" />
-              {property.disabled ? "Property Disabled" : property.status === "SOLD_OUT" ? "Sold Out" : paying ? "Processing..." : `Invest ${formatPrice(totalCost)}`}
+              {property.disabled ? "Property Disabled" : property.status === "SOLD_OUT" ? "Sold Out" : paying ? "Processing..." : `Pay ${formatPrice(totalCost)}`}
             </Button>
           </div>
         </div>
