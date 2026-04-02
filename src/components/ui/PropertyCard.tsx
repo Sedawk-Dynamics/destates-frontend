@@ -1,11 +1,11 @@
 "use client";
 
 import { Property } from "@/types";
-import { formatCurrency, resolveImageUrl } from "@/lib/utils";
+import { formatCurrency, formatPrice, resolveImageUrl } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, TrendingUp, Maximize, Building } from "lucide-react";
+import { MapPin, TrendingUp, Maximize, Layers } from "lucide-react";
 import Badge from "./Badge";
 
 export default function PropertyCard({ property }: { property: Property }) {
@@ -31,9 +31,13 @@ export default function PropertyCard({ property }: { property: Property }) {
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             <div className="absolute top-3 left-3">
-              <Badge variant={property.status === "AVAILABLE" ? "success" : "warning"}>
-                {property.status === "AVAILABLE" ? "Available" : "Limited"}
-              </Badge>
+              {property.disabled ? (
+                <Badge variant="default">Disabled</Badge>
+              ) : (
+                <Badge variant={property.status === "AVAILABLE" ? "success" : property.status === "LIMITED" ? "warning" : "default"}>
+                  {property.status === "AVAILABLE" ? "Available" : property.status === "LIMITED" ? "Limited" : "Sold Out"}
+                </Badge>
+              )}
             </div>
             {property.reraRegistered && (
               <div className="absolute top-3 right-3">
@@ -48,8 +52,8 @@ export default function PropertyCard({ property }: { property: Property }) {
             </p>
             <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-xs text-muted-foreground">Total Price</p>
-                <p className="text-xl font-bold text-primary">{formatCurrency(property.price)}</p>
+                <p className="text-xs text-muted-foreground">Invest from</p>
+                <p className="text-xl font-bold text-primary">{formatPrice(property.pricePerFraction)}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Expected ROI</p>
@@ -60,7 +64,7 @@ export default function PropertyCard({ property }: { property: Property }) {
             </div>
             <div className="flex items-center gap-4 text-sm text-muted-foreground border-t border-border pt-3">
               <span className="flex items-center gap-1"><Maximize size={14} /> {property.area} sq ft</span>
-              <span className="flex items-center gap-1"><Building size={14} /> {property.availableUnits} units</span>
+              <span className="flex items-center gap-1"><Layers size={14} /> {property.availableFractions}/{property.totalFractions} fractions</span>
               {property.readyToMove && <Badge variant="success">Ready to Move</Badge>}
             </div>
           </div>

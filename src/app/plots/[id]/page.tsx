@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Ruler, CheckCircle, ShoppingCart } from "lucide-react";
+import { ArrowLeft, MapPin, Ruler, CheckCircle, MessageSquare } from "lucide-react";
 import { LandPlot } from "@/types";
 import { getPlotById } from "@/lib/api";
-import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import { formatPrice, resolveImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -18,7 +16,6 @@ export default function PlotDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [plot, setPlot] = useState<LandPlot | null>(null);
   const [selectedArea, setSelectedArea] = useState(0);
-  const { addItem } = useCart();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -32,12 +29,10 @@ export default function PlotDetailPage() {
 
   const totalPrice = selectedArea * plot.pricePerSqft;
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) { toast.error("Please login to add items to cart"); return; }
-    try {
-      await addItem({ itemType: "PLOT", itemId: plot.id, selectedArea });
-      toast.success("Plot added to cart!");
-    } catch { toast.error("Failed to add to cart"); }
+  const handleInquiry = () => {
+    if (!isAuthenticated) { toast.error("Please login to send an inquiry"); return; }
+    toast.success("Redirecting to contact form...");
+    window.location.href = `/contact?subject=Inquiry about ${plot.name}&message=I am interested in ${selectedArea} sqft of ${plot.name} at ${plot.location}, ${plot.city}.`;
   };
 
   return (
@@ -91,13 +86,13 @@ export default function PlotDetailPage() {
                 <span className="text-sm text-muted-foreground">{plot.totalArea} sqft</span>
               </div>
               <div className="mt-4 text-center bg-card rounded-xl p-4 border border-border">
-                <p className="text-sm text-muted-foreground">Total Price</p>
+                <p className="text-sm text-muted-foreground">Estimated Price</p>
                 <p className="text-2xl font-bold text-primary">{formatPrice(totalPrice)}</p>
               </div>
             </div>
 
-            <Button onClick={handleAddToCart} size="lg" className="w-full">
-              <ShoppingCart size={18} className="mr-2" /> Add to Cart ({selectedArea} sqft)
+            <Button onClick={handleInquiry} size="lg" className="w-full">
+              <MessageSquare size={18} className="mr-2" /> Inquire About This Plot
             </Button>
           </div>
         </div>

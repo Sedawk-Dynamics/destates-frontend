@@ -2,14 +2,14 @@
 
 import AnimatedSection from "@/components/ui/AnimatedSection";
 import SectionHeading from "@/components/ui/SectionHeading";
-import { Home, ShoppingCart, ShieldCheck, TrendingUp, FileCheck, Users, ArrowLeftRight } from "lucide-react";
+import { Home, Layers, ShieldCheck, TrendingUp, CreditCard, Users, ArrowLeftRight } from "lucide-react";
 
 const steps = [
-  { icon: Home, title: "Browse Marketplace", description: "Explore affordable housing, ultra-luxury shops, offices, and studio apartments from top developers like M3M" },
-  { icon: ShoppingCart, title: "Select & Invest", description: "Choose your preferred property and add it to your cart — we handle all agreements and documentation" },
+  { icon: Home, title: "Browse Properties", description: "Explore premium residential properties, commercial spaces, and investment opportunities from top developers" },
+  { icon: Layers, title: "Choose Fractions", description: "Select how many fractions you want to own — invest in premium properties starting from as low as the price per fraction" },
+  { icon: CreditCard, title: "Pay Securely", description: "Complete your investment instantly via Razorpay with secure payment processing and instant confirmation" },
   { icon: ShieldCheck, title: "Secured by Leases", description: "Properties come with long-term dry leases of 9 to 15 years with leading brands, ensuring guaranteed rental income" },
-  { icon: ArrowLeftRight, title: "Easy Property Transfer", description: "We manage the complete transfer process — agreements, company approvals, and documentation between buyer and seller" },
-  { icon: TrendingUp, title: "Hassle-Free Income", description: "Sit back and earn consistent rental income while our team manages everything end-to-end" },
+  { icon: TrendingUp, title: "Earn Returns", description: "Sit back and earn consistent rental income and capital appreciation while our team manages everything" },
   { icon: Users, title: "Dedicated Support", description: "Expert team available to guide you through every step — from investment to property transfer and beyond" },
 ];
 

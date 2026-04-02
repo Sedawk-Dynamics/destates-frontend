@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Building, MapPin, Home as HomeIcon,
-  MessageSquare, Users, Star, Menu, X, LogOut, ChevronLeft,
+  MessageSquare, Users, Star, Menu, X, LogOut, ChevronLeft, Layers, User, ShieldCheck,
 } from "lucide-react";
 import AdminGuard from "@/components/admin/AdminGuard";
 import { useAuth } from "@/lib/auth-context";
@@ -13,6 +13,8 @@ import { useAuth } from "@/lib/auth-context";
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/properties", label: "Properties", icon: Building },
+  { href: "/admin/investments", label: "Investments", icon: Layers },
+  { href: "/admin/insurance", label: "Insurance", icon: ShieldCheck },
   { href: "/admin/pgs", label: "PG Listings", icon: HomeIcon },
   { href: "/admin/testimonials", label: "Testimonials", icon: Star },
   { href: "/admin/users", label: "Users", icon: Users },
@@ -58,12 +60,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="p-4 border-t border-border">
               <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              <button
-                onClick={logout}
-                className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
-              >
-                <LogOut size={14} /> Logout
-              </button>
+              <div className="mt-3 flex items-center gap-4">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <User size={14} /> Profile
+                </Link>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <LogOut size={14} /> Logout
+                </button>
+              </div>
             </div>
           </div>
         </aside>

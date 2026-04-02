@@ -1,56 +1,137 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, TrendingUp, Maximize, Building, Shield, CheckCircle, ShoppingCart, ShieldCheck } from "lucide-react";
-import { Property } from "@/types";
-import { getPropertyById } from "@/lib/api";
-import { useCart } from "@/lib/cart-context";
+import { ArrowLeft, MapPin, TrendingUp, Maximize, Layers, Shield, CheckCircle, CreditCard, ShieldCheck } from "lucide-react";
+import { Property, InsurancePlan } from "@/types";
+import { getPropertyById, createInvestmentOrder, verifyInvestmentPayment, getInsurancePlans } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import { formatCurrency, resolveImageUrl } from "@/lib/utils";
+import { formatCurrency, formatPrice, resolveImageUrl } from "@/lib/utils";
 import toast from "react-hot-toast";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 export default function PropertyDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [investAmount, setInvestAmount] = useState(0);
-  const [insuranceSelected, setInsuranceSelected] = useState(false);
-  const [insurancePlan, setInsurancePlan] = useState<number>(2000);
-  const { addItem } = useCart();
-  const { isAuthenticated } = useAuth();
+  const [fractions, setFractions] = useState(0);
+  const [plans, setPlans] = useState<InsurancePlan[]>([]);
+  const [paying, setPaying] = useState(false);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     getPropertyById(id).then((res) => {
       setProperty(res.data);
-      setInvestAmount(res.data.minInvestment || 100000);
+      setFractions(res.data.minFractions || 1);
     }).catch(() => {});
+    getInsurancePlans(id).then((res) => setPlans(res.data)).catch(() => {});
   }, [id]);
+
+  // Load Razorpay script
+  useEffect(() => {
+    if (document.getElementById("razorpay-script")) return;
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  const handleInvest = useCallback(async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to invest");
+      return;
+    }
+    if (!property) return;
+    if (fractions < 1 || fractions > property.availableFractions) {
+      toast.error(`Select between 1 and ${property.availableFractions} fractions`);
+      return;
+    }
+
+    setPaying(true);
+    try {
+      const res = await createInvestmentOrder({
+        propertyId: property.id,
+        fractions,
+      });
+
+      const { orderId, amount, currency, key } = res.data;
+
+      const options = {
+        key,
+        amount,
+        currency,
+        name: "Destates",
+        description: `${fractions} fraction(s) of ${property.name}`,
+        order_id: orderId,
+        handler: async (response: any) => {
+          try {
+            await verifyInvestmentPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            toast.success("Investment successful! Check My Investments for details.");
+            const updated = await getPropertyById(id);
+            setProperty(updated.data);
+            setFractions(1);
+          } catch {
+            toast.error("Payment verification failed. Contact support if money was deducted.");
+          }
+        },
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        theme: { color: "#6366f1" },
+        modal: { ondismiss: () => setPaying(false) },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", () => {
+        toast.error("Payment failed. Please try again.");
+        setPaying(false);
+      });
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create order");
+    } finally {
+      setPaying(false);
+    }
+  }, [isAuthenticated, property, fractions, id, user]);
 
   if (!property) {
     return <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground">Loading...</div>;
   }
 
-  const handleAddToCart = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please login to add items to cart");
-      return;
-    }
-    try {
-      await addItem({ itemType: "PROPERTY", itemId: property.id });
-      toast.success("Added to cart!");
-    } catch {
-      toast.error("Failed to add to cart");
-    }
-  };
+  const minF = property.minFractions || 1;
+  const maxF = property.maxFractions || property.availableFractions;
+  const totalCost = fractions * property.pricePerFraction;
+  const annualReturn = (totalCost * property.expectedROI) / 100;
+  const monthlyReturn = property.monthlyYield ? (totalCost * property.monthlyYield) / 100 : 0;
+  const annualRentalIncome = monthlyReturn * (property.rentalYieldMonths || 12);
+  const capitalGain = (totalCost * (property.capitalAppreciation || 0)) / 100;
 
-  const annualReturn = (investAmount * property.expectedROI) / 100;
-  const monthlyReturn = property.monthlyYield ? (investAmount * property.monthlyYield) / 100 : 0;
+  // Projection calculation
+  const projYears = property.projectionYears || 5;
+  let projectedValue = totalCost;
+  let totalRentalIncome = 0;
+  for (let y = 0; y < projYears; y++) {
+    projectedValue *= (1 + (property.capitalAppreciation || 0) / 100);
+    totalRentalIncome += monthlyReturn * (property.rentalYieldMonths || 12);
+  }
+  const totalProjectedReturn = projectedValue - totalCost + totalRentalIncome;
 
   return (
     <div className="py-12">
@@ -65,8 +146,8 @@ export default function PropertyDetailPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative h-80 md:h-[400px] rounded-xl overflow-hidden mb-3">
               <Image src={resolveImageUrl(property.images[selectedImage])} alt={property.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
               <div className="absolute top-3 left-3 flex gap-2">
-                <Badge variant={property.status === "AVAILABLE" ? "success" : "warning"}>
-                  {property.status === "AVAILABLE" ? "Available" : "Limited"}
+                <Badge variant={property.status === "AVAILABLE" ? "success" : property.status === "LIMITED" ? "warning" : "default"}>
+                  {property.status === "AVAILABLE" ? "Available" : property.status === "LIMITED" ? "Limited" : "Sold Out"}
                 </Badge>
                 {property.reraRegistered && <Badge variant="primary">RERA Registered</Badge>}
               </div>
@@ -83,11 +164,21 @@ export default function PropertyDetailPage() {
           {/* Details */}
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{property.name}</h1>
-            <p className="text-muted-foreground flex items-center gap-1 mb-6"><MapPin size={16} /> {property.location}, {property.city}</p>
+            <p className="text-muted-foreground flex items-center gap-1 mb-4"><MapPin size={16} /> {property.location}, {property.city}</p>
+
+            {property.disabled && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+                <Shield size={20} className="text-red-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-red-700">This property has been disabled</p>
+                  <p className="text-xs text-red-600">New investments are currently paused by the admin. Your existing holdings remain safe.</p>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-muted/50 rounded-xl p-4 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Total Price</p>
+                <p className="text-xs text-muted-foreground mb-1">Property Value</p>
                 <p className="text-lg font-bold text-primary">{formatCurrency(property.price)}</p>
               </div>
               <div className="bg-muted/50 rounded-xl p-4 text-center">
@@ -100,7 +191,7 @@ export default function PropertyDetailPage() {
               </div>
               <div className="bg-muted/50 rounded-xl p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">Available</p>
-                <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1"><Building size={14} /> {property.availableUnits} units</p>
+                <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1"><Layers size={14} /> {property.availableFractions}/{property.totalFractions}</p>
               </div>
             </div>
 
@@ -118,87 +209,150 @@ export default function PropertyDetailPage() {
               </div>
             </div>
 
-            {/* ROI Calculator */}
-            {property.roiCalculatorEnabled && (
-              <div className="bg-muted/50 rounded-xl p-6 mb-6">
-                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><TrendingUp size={18} className="text-primary" /> ROI Calculator</h3>
-                <label className="text-sm text-muted-foreground">Investment Amount: {formatCurrency(investAmount)}</label>
-                <input
-                  type="range"
-                  min={property.minInvestment}
-                  max={property.maxInvestment || property.price}
-                  step={property.investmentStep}
-                  value={investAmount}
-                  onChange={(e) => setInvestAmount(Number(e.target.value))}
-                  className="w-full mt-2 mb-1 accent-primary"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground mb-4">
-                  <span>{formatCurrency(property.minInvestment)}</span>
-                  <span>{formatCurrency(property.maxInvestment || property.price)}</span>
+            {/* Fractional Investment Section */}
+            <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-6 mb-6 border border-primary/20">
+              <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                <Layers size={18} className="text-primary" /> Invest in Fractions
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Buy fractional ownership starting at {formatPrice(property.pricePerFraction)} per fraction
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">
+                    Number of Fractions (min {minF}{maxF < property.availableFractions ? `, max ${maxF}` : ""}, {property.availableFractions} available)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setFractions(Math.max(minF, fractions - 1))}
+                      className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
+                      disabled={fractions <= minF}
+                    >-</button>
+                    <input
+                      type="number"
+                      min={minF}
+                      max={Math.min(maxF, property.availableFractions)}
+                      value={fractions}
+                      onChange={(e) => {
+                        const val = Math.max(minF, Math.min(Math.min(maxF, property.availableFractions), Number(e.target.value) || minF));
+                        setFractions(val);
+                      }}
+                      className="w-24 text-center px-3 py-2 bg-card border border-border rounded-lg text-foreground font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <button
+                      onClick={() => setFractions(Math.min(Math.min(maxF, property.availableFractions), fractions + 1))}
+                      className="w-10 h-10 rounded-lg bg-card border border-border flex items-center justify-center text-lg font-bold hover:bg-muted transition-colors"
+                      disabled={fractions >= Math.min(maxF, property.availableFractions)}
+                    >+</button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Annual Return</p>
-                    <p className="text-lg font-bold text-green-600">{formatCurrency(annualReturn)}</p>
+
+                <div className="bg-card rounded-lg p-4 border border-border">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Price per fraction</span>
+                    <span className="text-foreground font-medium">{formatPrice(property.pricePerFraction)}</span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">Monthly Yield</p>
-                    <p className="text-lg font-bold text-primary">{formatCurrency(monthlyReturn)}</p>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Fractions</span>
+                    <span className="text-foreground font-medium">x {fractions}</span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">{property.projectionYears}-Year Value</p>
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(investAmount * Math.pow(1 + property.expectedROI / 100, property.projectionYears))}</p>
+                  <div className="border-t border-border pt-2 flex justify-between">
+                    <span className="font-semibold text-foreground">Total Investment</span>
+                    <span className="font-bold text-primary text-lg">{formatPrice(totalCost)}</span>
                   </div>
+                </div>
+
+                {property.roiCalculatorEnabled && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="text-center bg-card rounded-lg p-3 border border-border">
+                        <p className="text-xs text-muted-foreground">Annual Return</p>
+                        <p className="text-sm font-bold text-green-600">{formatPrice(annualReturn)}</p>
+                        <p className="text-[10px] text-muted-foreground">{property.expectedROI}% p.a.</p>
+                      </div>
+                      <div className="text-center bg-card rounded-lg p-3 border border-border">
+                        <p className="text-xs text-muted-foreground">Monthly Yield</p>
+                        <p className="text-sm font-bold text-primary">{formatPrice(monthlyReturn)}</p>
+                        <p className="text-[10px] text-muted-foreground">{property.rentalYieldMonths || 12} months/yr</p>
+                      </div>
+                      <div className="text-center bg-card rounded-lg p-3 border border-border">
+                        <p className="text-xs text-muted-foreground">Capital Growth</p>
+                        <p className="text-sm font-bold text-orange-600">{formatPrice(capitalGain)}/yr</p>
+                        <p className="text-[10px] text-muted-foreground">{property.capitalAppreciation || 0}% p.a.</p>
+                      </div>
+                      <div className="text-center bg-card rounded-lg p-3 border border-border">
+                        <p className="text-xs text-muted-foreground">Annual Rental</p>
+                        <p className="text-sm font-bold text-blue-600">{formatPrice(annualRentalIncome)}</p>
+                        <p className="text-[10px] text-muted-foreground">{property.rentalYieldMonths || 12} months</p>
+                      </div>
+                    </div>
+
+                    {/* Projection */}
+                    <div className="bg-card rounded-lg p-4 border border-border">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">{projYears}-Year Projection</p>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Investment</span>
+                        <span className="text-foreground">{formatPrice(totalCost)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Property Value ({projYears}yr)</span>
+                        <span className="text-orange-600">{formatPrice(projectedValue)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Total Rental Income</span>
+                        <span className="text-blue-600">{formatPrice(totalRentalIncome)}</span>
+                      </div>
+                      <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
+                        <span className="text-foreground">Total Return</span>
+                        <span className="text-green-600">{formatPrice(totalProjectedReturn)}</span>
+                      </div>
+                    </div>
+
+                    {/* Info badges */}
+                    <div className="flex flex-wrap gap-2">
+                      {property.lockInPeriod > 0 && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">Lock-in: {property.lockInPeriod} months</span>
+                      )}
+                      {property.lockInPeriod === 0 && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">No lock-in period</span>
+                      )}
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Rental: {property.rentalYieldMonths || 12} months/year</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Insurance Plans */}
+            {plans.length > 0 && (
+              <div className="bg-muted/50 rounded-xl p-6 mb-6 border border-border">
+                <h3 className="font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <ShieldCheck size={18} className="text-primary" /> Optional Insurance
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Protect your investment with insurance. You can purchase insurance from My Investments after investing.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {plans.map((plan) => (
+                    <div key={plan.id} className="bg-card rounded-lg p-4 border border-border">
+                      <p className="font-semibold text-foreground text-sm">{plan.name}</p>
+                      <p className="text-xl font-bold text-primary mt-1">{formatPrice(plan.monthlyPremium)}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+                      <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{plan.coverage}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Optional Insurance */}
-            <div className="bg-muted/50 rounded-xl p-6 mb-6 border border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-foreground flex items-center gap-2">
-                  <ShieldCheck size={18} className="text-primary" /> Optional Insurance
-                </h3>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={insuranceSelected}
-                    onChange={(e) => setInsuranceSelected(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-                </label>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Secure your investment against damage, natural calamities, or other unforeseen issues with our optional insurance coverage.
-              </p>
-              {insuranceSelected && (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">Select monthly premium:</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[2000, 3500, 5000].map((amount) => (
-                      <button
-                        key={amount}
-                        onClick={() => setInsurancePlan(amount)}
-                        className={`py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
-                          insurancePlan === amount
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-card text-muted-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        ₹{amount.toLocaleString("en-IN")}/mo
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Coverage: structural damage, fire, flooding & more. <a href="/terms#insurance" className="text-primary hover:underline">View full details</a>
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <Button onClick={handleAddToCart} size="lg" className="w-full">
-              <ShoppingCart size={18} className="mr-2" /> Add to Cart
+            <Button
+              onClick={handleInvest}
+              size="lg"
+              className="w-full"
+              disabled={paying || property.disabled || property.status === "SOLD_OUT" || property.availableFractions === 0}
+            >
+              <CreditCard size={18} className="mr-2" />
+              {property.disabled ? "Property Disabled" : property.status === "SOLD_OUT" ? "Sold Out" : paying ? "Processing..." : `Invest ${formatPrice(totalCost)}`}
             </Button>
           </div>
         </div>

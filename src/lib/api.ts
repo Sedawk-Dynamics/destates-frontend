@@ -1,4 +1,4 @@
-import { ApiResponse, Property, LandPlot, PGListing, CartItem, User, Testimonial, ContactInquiry, DashboardStats } from "@/types";
+import { ApiResponse, Property, LandPlot, PGListing, User, Testimonial, ContactInquiry, DashboardStats, Investment, CreateOrderResponse, Notification, InsurancePlan, UserInsurance } from "@/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.destates.in/api";
 
@@ -56,14 +56,63 @@ export const registerApi = (data: { name: string; email: string; password: strin
 
 export const getMeApi = () => apiClient<ApiResponse<User>>("/auth/me");
 
-// Cart
-export const getCartApi = () => apiClient<ApiResponse<CartItem[]>>("/cart");
-export const addToCartApi = (data: { itemType: string; itemId: string; quantity?: number; selectedArea?: number }) =>
-  apiClient<ApiResponse<CartItem>>("/cart", { method: "POST", body: JSON.stringify(data) });
-export const removeFromCartApi = (id: string) =>
-  apiClient<ApiResponse<null>>(`/cart/${id}`, { method: "DELETE" });
-export const clearCartApi = () =>
-  apiClient<ApiResponse<null>>("/cart", { method: "DELETE" });
+export const updateProfileApi = (data: { name: string; phone?: string }) =>
+  apiClient<ApiResponse<User>>("/auth/profile", { method: "PUT", body: JSON.stringify(data) });
+
+export const changePasswordApi = (data: { currentPassword: string; newPassword: string }) =>
+  apiClient<ApiResponse<null>>("/auth/change-password", { method: "PUT", body: JSON.stringify(data) });
+
+// Investments
+export const createInvestmentOrder = (data: { propertyId: string; fractions: number }) =>
+  apiClient<ApiResponse<CreateOrderResponse>>("/investments/create-order", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const verifyInvestmentPayment = (data: {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}) =>
+  apiClient<ApiResponse<Investment>>("/investments/verify-payment", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getMyInvestments = () =>
+  apiClient<ApiResponse<Investment[]>>("/investments/my");
+
+// Notifications
+export const getNotifications = () =>
+  apiClient<ApiResponse<Notification[]>>("/notifications");
+
+export const getUnreadNotificationCount = () =>
+  apiClient<ApiResponse<{ count: number }>>("/notifications/unread-count");
+
+export const markNotificationRead = (id: string) =>
+  apiClient<ApiResponse<null>>(`/notifications/${id}/read`, { method: "PUT" });
+
+export const markAllNotificationsRead = () =>
+  apiClient<ApiResponse<null>>("/notifications/read-all", { method: "PUT" });
+
+// Insurance
+export const getInsurancePlans = (propertyId: string) =>
+  apiClient<ApiResponse<InsurancePlan[]>>(`/insurance/plans/${propertyId}`);
+
+export const createInsuranceOrder = (data: { investmentId: string; insurancePlanId: string }) =>
+  apiClient<ApiResponse<CreateOrderResponse>>("/insurance/create-order", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const verifyInsurancePayment = (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+  apiClient<ApiResponse<UserInsurance>>("/insurance/verify-payment", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+
+export const getMyInsurances = () =>
+  apiClient<ApiResponse<UserInsurance[]>>("/insurance/my");
 
 // Contact
 export const submitContact = (data: { name: string; email: string; phone?: string; subject: string; message: string }) =>
@@ -73,6 +122,29 @@ export const submitContact = (data: { name: string; email: string; phone?: strin
 export const getAdminStats = () => apiClient<ApiResponse<DashboardStats>>("/admin/stats");
 export const getAdminUsers = () => apiClient<ApiResponse<User[]>>("/admin/users");
 export const getAdminInquiries = () => apiClient<ApiResponse<ContactInquiry[]>>("/admin/inquiries");
+export const getAdminInvestments = () => apiClient<ApiResponse<any[]>>("/admin/investments");
+
+export const adminFractionSplit = (id: string, data: { newTotalFractions: number; newPricePerFraction: number }) =>
+  apiClient<ApiResponse<Property>>(`/admin/properties/${id}/fraction-split`, { method: "PUT", body: JSON.stringify(data) });
+
+// Admin Insurance Plans
+export const getAllAdminInsurancePlans = () =>
+  apiClient<ApiResponse<(InsurancePlan & { property?: { id: string; name: string; city: string } })[]>>("/admin/insurance-plans");
+export const getAdminInsurancePlans = (propertyId: string) =>
+  apiClient<ApiResponse<InsurancePlan[]>>(`/admin/insurance-plans/${propertyId}`);
+export const adminCreateInsurancePlan = (data: Partial<InsurancePlan>) =>
+  apiClient<ApiResponse<InsurancePlan>>("/admin/insurance-plans", { method: "POST", body: JSON.stringify(data) });
+export const adminUpdateInsurancePlan = (id: string, data: Partial<InsurancePlan>) =>
+  apiClient<ApiResponse<InsurancePlan>>(`/admin/insurance-plans/${id}`, { method: "PUT", body: JSON.stringify(data) });
+export const adminDeleteInsurancePlan = (id: string) =>
+  apiClient<ApiResponse<null>>(`/admin/insurance-plans/${id}`, { method: "DELETE" });
+export const adminConnectInsurancePlan = (planId: string, propertyId: string) =>
+  apiClient<ApiResponse<null>>("/admin/insurance-plans/connect", { method: "POST", body: JSON.stringify({ planId, propertyId }) });
+export const adminDisconnectInsurancePlan = (planId: string, propertyId: string) =>
+  apiClient<ApiResponse<null>>("/admin/insurance-plans/disconnect", { method: "POST", body: JSON.stringify({ planId, propertyId }) });
+
+export const adminTogglePropertyDisabled = (id: string) =>
+  apiClient<ApiResponse<Property>>(`/admin/properties/${id}/toggle-disabled`, { method: "PUT" });
 
 // Admin Properties
 export const adminCreateProperty = (data: Partial<Property>) =>
