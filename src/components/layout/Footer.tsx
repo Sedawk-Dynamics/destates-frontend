@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Phone, Mail, MapPin } from "lucide-react";
+import CookieSettingsLink from "./CookieSettingsLink";
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Company Info */}
           <div>
-            <Image src="/logo.png" alt="Destates" width={140} height={40} className="h-8 w-auto mb-4 brightness-0 invert" />
+            <Image src="/logo-horizontal.png" alt="Destates" width={280} height={80} className="h-8 w-auto mb-4 brightness-0 invert" />
             <p className="text-background/60 text-sm mb-4">
               Your marketplace for affordable housing and premium commercial investment properties. Hassle-free rental income with long-term lease security.
             </p>
@@ -46,6 +47,8 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               <li><Link href="/terms" className="text-background/60 hover:text-primary transition-colors">Terms & Conditions</Link></li>
               <li><Link href="/terms#privacy" className="text-background/60 hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/cookie-policy" className="text-background/60 hover:text-primary transition-colors">Cookie Policy</Link></li>
+              <li><CookieSettingsLink /></li>
               <li><Link href="/terms#disclaimer" className="text-background/60 hover:text-primary transition-colors">Disclaimer</Link></li>
             </ul>
           </div>
